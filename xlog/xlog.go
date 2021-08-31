@@ -1,8 +1,8 @@
 package xlog
 
 import (
-	"anynode/app/lib/cheerlib"
 	"fmt"
+	"go-cheerlib/cheerlib"
 	"os"
 	"path"
 	"path/filepath"
