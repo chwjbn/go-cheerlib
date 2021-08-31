@@ -2,7 +2,7 @@ package xlog
 
 import (
 	"fmt"
-	"go-cheerlib/cheerlib"
+	"github.com/chwjbn/go-cheerlib/cheerlib"
 	"os"
 	"path"
 	"path/filepath"
