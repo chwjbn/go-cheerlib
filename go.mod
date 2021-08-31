@@ -1,4 +1,4 @@
-module go-cheerlib
+module github.com/chwjbn/go-cheerlib
 
 go 1.14
 
