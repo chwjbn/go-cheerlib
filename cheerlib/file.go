@@ -54,15 +54,18 @@ func File_Copy(srcPath string,desPath string) bool{
 	bRet:=false
 
 	if !File_Exists(srcPath){
+		LogError("File_Copy srcPath Not Exists")
 		return bRet
 	}
 
 	if File_Exists(desPath){
+		LogError("File_Copy desPath Exists")
 		return bRet
 	}
 
 	xDesFile,xDesFileErr:=os.Create(desPath)
 	if xDesFileErr!=nil{
+		LogError("File_Copy Create DesFile Error:"+xDesFileErr.Error())
 		return bRet
 	}
 
@@ -72,6 +75,7 @@ func File_Copy(srcPath string,desPath string) bool{
 	xSrcFile,xSrcFileErr:=os.Open(srcPath)
 
 	if xSrcFileErr!=nil{
+		LogError("File_Copy Open SrcFile Error:"+xSrcFileErr.Error())
 		return bRet
 	}
 
@@ -81,6 +85,7 @@ func File_Copy(srcPath string,desPath string) bool{
 	_,xCopyErr:=io.Copy(xDesFile,xSrcFile)
 
 	if xCopyErr!=nil{
+		LogError("File_Copy Error:"+xCopyErr.Error())
 		return bRet
 	}
 

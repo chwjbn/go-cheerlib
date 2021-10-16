@@ -13,6 +13,12 @@ import (
 
 func Process_ExcuteCommand(timeout int,command string,args ...string) ([]byte,error) {
 
+	LogTag("Process_ExcuteCommand Begin")
+	LogInfo(fmt.Sprintf("Process_ExcuteCommand timeout=[%d],command=[%s],args=[%s]",timeout,command,strings.Join(args," ")))
+	defer func() {
+		LogTag("Process_ExcuteCommand End")
+	}()
+
 	var xError error=nil
 	var xData []byte=[]byte{}
 
@@ -21,6 +27,7 @@ func Process_ExcuteCommand(timeout int,command string,args ...string) ([]byte,er
 
 	var xCmdHandle *exec.Cmd
 	xCmdHandle=exec.Command(command, args...)
+
 	xCmdHandle.Stdout=&xResultBuf
 	xCmdHandle.Stderr=&xErrorBuf
 	xCmdHandle.Env=os.Environ()
@@ -36,15 +43,29 @@ func Process_ExcuteCommand(timeout int,command string,args ...string) ([]byte,er
 	}()
 
 
+	xTimeOut:=timeout
+	if xTimeOut<0{
+		xTimeOut=5
+	}
+
+
 	select {
 
-	    case <-time.After(time.Duration(timeout) * time.Second):
-	    	xError=errors.New(fmt.Sprintf("Process_ExcuteCommand TimeOut After %ds",timeout))
-			xCmdHandle.Process.Signal(syscall.SIGINT)
-			time.Sleep(50*time.Millisecond)
-			xCmdHandle.Process.Kill()
+	    case <-time.After(time.Duration(xTimeOut) * time.Second):
+	    	xError=errors.New(fmt.Sprintf("Process_ExcuteCommand TimeOut After %ds",xTimeOut))
+			LogError("Process_ExcuteCommand With TimeOutError:"+xError.Error())
 
-	    case <-xDoneChan:
+	    	if timeout>0{
+				xCmdHandle.Process.Signal(syscall.SIGINT)
+				time.Sleep(50*time.Millisecond)
+				xCmdHandle.Process.Kill()
+			}
+
+	    case xDoneErr:=<-xDoneChan:
+	    	if xDoneErr!=nil{
+				LogError("Process_ExcuteCommand With DoneError:"+xDoneErr.Error())
+			}
+
 			xError=nil
 	}
 
@@ -66,16 +87,36 @@ func Process_ExcuteCommand(timeout int,command string,args ...string) ([]byte,er
 	return xData,xError
 }
 
-func Process_Start(command string,args ...string) error {
+func Process_Start(command string,args ...string) (error,int) {
+
+	LogTag("Process_Start Begin")
+	LogInfo(fmt.Sprintf("Process_Start command=[%s],args=[%s]",command,strings.Join(args," ")))
+	defer func() {
+		LogTag("Process_Start End")
+	}()
+
+
+	xPid:=0
 
 	var xCmdHandle *exec.Cmd
 	xCmdHandle=exec.Command(command, args...)
 
+	xProcAttr:=Process_GetNewStartProcAttr()
+
 	xCmdHandle.Env=os.Environ()
+	xCmdHandle.SysProcAttr=&xProcAttr
 
 	xError:=xCmdHandle.Start()
 
-	return xError
+	if xError!=nil{
+		return xError,xPid
+	}
+
+	if xCmdHandle.Process!=nil{
+		xPid=xCmdHandle.Process.Pid
+	}
+
+	return xError,xPid
 }
 
 func Process_StartNew(command string,args ...string) error {
